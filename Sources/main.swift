@@ -1,4 +1,11 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
+import CoreAudio
+import Raylib
 
-print("Hello, world!")
+Raylib.initAudioDevice()
+let s = Raylib.loadSound("dune.wav")
+Raylib.playSound(s)
+while Raylib.isSoundPlaying(s) {
+    // nothing to do
+}
+Raylib.unloadSound(s)
+Raylib.closeAudioDevice()
