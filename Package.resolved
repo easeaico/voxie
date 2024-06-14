@@ -1,5 +1,5 @@
 {
-  "originHash" : "94ae55617e37d7959b043a15c388965616f6d8b9d8ceeaf357f998fcfc547a18",
+  "originHash" : "e8b0701d53cd49527745746e5d64c1105c60c43a0295805ada27f9fa73f62f80",
   "pins" : [
     {
       "identity" : "openai",
@@ -17,15 +17,6 @@
       "state" : {
         "branch" : "master",
         "revision" : "9e7c83604f74211e4f8f3c38c1c52d4434f51bc1"
-      }
-    },
-    {
-      "identity" : "swift-toml",
-      "kind" : "remoteSourceControl",
-      "location" : "http://github.com/jdfergason/swift-toml",
-      "state" : {
-        "branch" : "master",
-        "revision" : "f26573bd49534f68ac11c2f7467c1d50cdb2afce"
       }
     }
   ],
