@@ -39,7 +39,7 @@ let config = try TOMLDecoder().decode(Config.self, from: configData)
 let asrConfig = OpenAI.Configuration(token: config.asr.apiKey, host: config.asr.host, port: config.asr.port, scheme: config.asr.scheme)
 let asrClient = OpenAI(configuration: asrConfig)
 
-let ttsConfig = OpenAI.Configuration(token: config.tts.apiKey, host: config.tts.host, port: config.asr.port, scheme: config.tts.scheme)
+let ttsConfig = OpenAI.Configuration(token: config.tts.apiKey, host: config.tts.host, port: config.tts.port, scheme: config.tts.scheme)
 let ttsClient = OpenAI(configuration: ttsConfig)
 
 let llmConfig = OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme)
@@ -74,6 +74,7 @@ func conversation() async throws {
     let ttsResult = try await ttsClient.audioCreateSpeech(query: sQuery)
     var audioBuffer: [UInt8] = []
     ttsResult.audio.withUnsafeBytes{ audioBuffer.append(contentsOf: $0) }
+
 
     let sound = Raylib.loadSoundFromWave(Raylib.LoadWaveFromMemory(".wav", audioBuffer, Int32(audioBuffer.count)))
     Raylib.playSound(sound)
