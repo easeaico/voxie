@@ -1,5 +1,5 @@
 {
-  "originHash" : "e8b0701d53cd49527745746e5d64c1105c60c43a0295805ada27f9fa73f62f80",
+  "originHash" : "2788f49abe70d0d1cd51f36951e0ea75d71290715d105ca25c011c94e507dc1d",
   "pins" : [
     {
       "identity" : "openai",
@@ -17,6 +17,15 @@
       "state" : {
         "branch" : "master",
         "revision" : "9e7c83604f74211e4f8f3c38c1c52d4434f51bc1"
+      }
+    },
+    {
+      "identity" : "tomlkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/LebJe/TOMLKit.git",
+      "state" : {
+        "revision" : "ec6198d37d495efc6acd4dffbd262cdca7ff9b3f",
+        "version" : "0.6.0"
       }
     }
   ],

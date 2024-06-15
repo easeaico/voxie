@@ -1,39 +1,97 @@
 import Raylib
 import OpenAI
+
+import TOMLKit
 import Foundation
 
 struct Config: Codable {
-    let host: String
-    let apiKey: String
-}
+    let asr: ASR
+    let tts: TTS
+    let llm: LLM
 
-let configUrl = Bundle.module.url(forResource: "Config", withExtension: "plist")!
-let configData = try! Data(contentsOf: configUrl)
-let decoder = PropertyListDecoder()
-let config = try! decoder.decode(Config.self, from: configData)
-
-let configuration = OpenAI.Configuration(token: config.apiKey, host: config.host)
-let openAI = OpenAI(configuration: configuration)
-let query = ChatQuery(
-    messages: [.init(role: .user, content: "who are you")!], 
-    model: .gpt3_5Turbo
-)
-openAI.chats(query: query) { result in
-    switch result {
-    case .success(let chatResult):
-        print("Publisher Success \(chatResult.choices[0].message.content!)")
-    case .failure(let error):
-        print("Publisher error: \(error)")
+    struct LLM: Codable {
+        let scheme: String
+        let host: String
+        let port: Int
+        let apiKey: String
+    }
+    
+    struct ASR: Codable {
+        let scheme: String
+        let host: String
+        let port: Int
+        let apiKey: String
+    }
+    
+    struct TTS: Codable {
+        let scheme: String
+        let host: String
+        let port: Int
+        let apiKey: String
     }
 }
 
-Thread.sleep(forTimeInterval: 10)
+let configFile = Bundle.module.url(forResource: "Config", withExtension: "toml")!
+let configData = try String(contentsOf: configFile, encoding: .utf8)
+let config = try TOMLDecoder().decode(Config.self, from: configData)
 
-Raylib.initAudioDevice()
-let s = Raylib.loadSound("dune.wav")
-Raylib.playSound(s)
-while Raylib.isSoundPlaying(s) {
-    // nothing to do
+
+let asrConfig = OpenAI.Configuration(token: config.asr.apiKey, host: config.asr.host, port: config.asr.port, scheme: config.asr.scheme)
+let asrClient = OpenAI(configuration: asrConfig)
+
+let ttsConfig = OpenAI.Configuration(token: config.tts.apiKey, host: config.tts.host, port: config.asr.port, scheme: config.tts.scheme)
+let ttsClient = OpenAI(configuration: ttsConfig)
+
+let llmConfig = OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme)
+let llmClient = OpenAI(configuration: llmConfig)
+
+func conversation() async throws {
+    let inputFile = Bundle.module.url(forResource: "dune", withExtension: "wav")!
+    let data = try Data(contentsOf:inputFile)
+    let aQuery = AudioTranscriptionQuery(
+        file: data,
+        fileType: .wav,
+        model: .whisper_1
+    )
+    let asrResult = try await asrClient.audioTranscriptions(query: aQuery)
+    print(asrResult.text)
+
+    let cQuery = ChatQuery(
+        messages: [.init(role: .user, content: asrResult.text)!],
+        model: .gpt3_5Turbo
+    )
+    let chatResult = try await llmClient.chats(query: cQuery)
+    let content = chatResult.choices[0].message.content!.string!
+    print(content)
+    
+    let sQuery = AudioSpeechQuery(
+        model: .tts_1,
+        input: content,
+        voice: .alloy,
+        responseFormat: .mp3, 
+        speed: 1.0
+    )
+    let ttsResult = try await ttsClient.audioCreateSpeech(query: sQuery)
+    var audioBuffer: [UInt8] = []
+    ttsResult.audio.withUnsafeBytes{ audioBuffer.append(contentsOf: $0) }
+
+    Raylib.initAudioDevice()
+    let sound = Raylib.loadSoundFromWave(Raylib.LoadWaveFromMemory(".wav", audioBuffer, Int32(audioBuffer.count)))
+    Raylib.playSound(sound)
+    while Raylib.isSoundPlaying(sound) {
+        // nothing to do
+    }
+    Raylib.unloadSound(sound)
+    Raylib.closeAudioDevice()
 }
-Raylib.unloadSound(s)
-Raylib.closeAudioDevice()
+
+
+try await conversation()
+print("Press enter to exit...")
+while true {
+    if let input = readLine() {
+        if input.isEmpty {
+            break
+        }
+    }
+}

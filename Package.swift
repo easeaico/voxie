@@ -14,6 +14,7 @@ let package = Package(
             targets: ["voxie"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/LebJe/TOMLKit.git", from: "0.5.0"),
         .package(url: "https://github.com/STREGAsGate/Raylib.git", branch: "master"),
         .package(url: "https://github.com/MacPaw/OpenAI.git", branch: "main")
     ],
@@ -22,9 +23,10 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(            
             name: "voxie", 
-            dependencies: ["Raylib", "OpenAI"],
+            dependencies: ["Raylib", "OpenAI", "TOMLKit"],
             resources: [
-                .process("Config.plist"),
+                .process("Config.toml"),
+                .process("dune.wav"),
             ]
         ),
     ]

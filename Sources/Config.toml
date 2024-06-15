@@ -1,0 +1,17 @@
+[asr]
+scheme = "http"
+host = "192.168.88.48"
+port = 8050
+apiKey = ""
+
+[tts]
+scheme = "http"
+host = "192.168.88.48"
+port = 8051
+apiKey = ""
+
+[llm]
+scheme = "https"
+host = "easeai.co"
+port = 443
+apiKey = "ea-f8c28c7d021644e0bc8c0759d9772fe0"
