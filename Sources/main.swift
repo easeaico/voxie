@@ -75,17 +75,16 @@ func conversation() async throws {
     var audioBuffer: [UInt8] = []
     ttsResult.audio.withUnsafeBytes{ audioBuffer.append(contentsOf: $0) }
 
-    Raylib.initAudioDevice()
     let sound = Raylib.loadSoundFromWave(Raylib.LoadWaveFromMemory(".wav", audioBuffer, Int32(audioBuffer.count)))
     Raylib.playSound(sound)
     while Raylib.isSoundPlaying(sound) {
         // nothing to do
     }
     Raylib.unloadSound(sound)
-    Raylib.closeAudioDevice()
 }
 
 
+Raylib.initAudioDevice()
 try await conversation()
 print("Press enter to exit...")
 while true {
@@ -95,3 +94,4 @@ while true {
         }
     }
 }
+Raylib.closeAudioDevice()
