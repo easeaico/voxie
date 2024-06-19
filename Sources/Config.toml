@@ -15,3 +15,4 @@ scheme = "https"
 host = "easeai.co"
 port = 443
 apiKey = "ea-f8c28c7d021644e0bc8c0759d9772fe0"
+model = "gpt-4o"

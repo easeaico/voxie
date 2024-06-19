@@ -17,6 +17,7 @@ struct Config: Codable {
         let host: String
         let port: Int
         let apiKey: String
+        let model: String
     }
     
     struct ASR: Codable {
@@ -110,7 +111,7 @@ func conversation(for data: Data) async throws -> Data {
 
     let cQuery = ChatQuery(
         messages: [.init(role: .user, content: asrResult.text)!],
-        model: .gpt3_5Turbo
+        model: config.llm.model
     )
     let chatResult = try await llmClient.chats(query: cQuery)
     let content = chatResult.choices[0].message.content!.string!
