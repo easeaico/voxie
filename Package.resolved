@@ -1,6 +1,15 @@
 {
-  "originHash" : "2788f49abe70d0d1cd51f36951e0ea75d71290715d105ca25c011c94e507dc1d",
+  "originHash" : "ad988c96028fa4ddfda244c95be458c169debba718fda2afe5beaf4d873921e1",
   "pins" : [
+    {
+      "identity" : "miniaudio",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/easeaico/MiniAudio.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5ae2615c4169fbc6998fd0665fe1ee65365cb99c"
+      }
+    },
     {
       "identity" : "openai",
       "kind" : "remoteSourceControl",
@@ -11,12 +20,12 @@
       }
     },
     {
-      "identity" : "raylib",
+      "identity" : "swiftygpio",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/STREGAsGate/Raylib.git",
+      "location" : "https://github.com/uraimo/SwiftyGPIO.git",
       "state" : {
-        "branch" : "master",
-        "revision" : "9e7c83604f74211e4f8f3c38c1c52d4434f51bc1"
+        "revision" : "b86215de6ecde8e6649590978164a5532ef7a975",
+        "version" : "1.4.4"
       }
     },
     {

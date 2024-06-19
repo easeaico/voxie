@@ -15,18 +15,18 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/LebJe/TOMLKit.git", from: "0.5.0"),
-        .package(url: "https://github.com/STREGAsGate/Raylib.git", branch: "master"),
-        .package(url: "https://github.com/MacPaw/OpenAI.git", branch: "main")
+        .package(url: "https://github.com/easeaico/MiniAudio.git", branch: "main"),
+        .package(url: "https://github.com/MacPaw/OpenAI.git", branch: "main"),
+        .package(url: "https://github.com/uraimo/SwiftyGPIO.git", from: "1.0.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(            
             name: "voxie", 
-            dependencies: ["Raylib", "OpenAI", "TOMLKit"],
+            dependencies: ["OpenAI", "TOMLKit", "MiniAudio", "SwiftyGPIO"],
             resources: [
                 .process("Config.toml"),
-                .process("dune.wav"),
             ]
         ),
     ]

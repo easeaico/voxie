@@ -1,8 +1,11 @@
-import Raylib
 import OpenAI
-
+import MiniAudio
 import TOMLKit
 import Foundation
+import SwiftyGPIO
+
+let ledPinNo = 16;
+let btnPinNo = 17;
 
 struct Config: Codable {
     let asr: ASR
@@ -45,9 +48,58 @@ let ttsClient = OpenAI(configuration: ttsConfig)
 let llmConfig = OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme)
 let llmClient = OpenAI(configuration: llmConfig)
 
-func conversation() async throws {
-    let inputFile = Bundle.module.url(forResource: "dune", withExtension: "wav")!
-    let data = try Data(contentsOf:inputFile)
+let capturer = AudioCapturer()
+let player = AudioPlayer()
+
+let gpios = SwiftyGPIO.GPIOs(for: .RaspberryPiZero2)
+let ledPin = gpios[.P16]!
+ledPin.direction = .OUT
+
+let btnPin = gpios[.P17]!
+btnPin.pull = .up
+btnPin.direction = .IN
+btnPin.bounceTime = 1
+
+btnPin.onFalling { gpio in 
+    // light on
+    ledPin.value = 1
+
+    // close play device
+    player.closeAudioPlaybackDevice()
+
+    // start to capture
+    do {
+        try capturer.initAudioCaptureDevice(EncodingFormat.wav, AudioFormat.s16, 1, 16000)
+        try capturer.startAudioCapturing()
+    } catch {
+        print("start audio capturing error: \(error)")
+    }
+}
+
+btnPin.onRaising { gpio in 
+    // light off
+    ledPin.value = 0
+    // close capture
+    capturer.closeAudioCaptureDevice()
+    // send conversation
+    let input = capturer.getData()
+
+    // start to capture
+    Task {
+        do {
+            ledPin.value = 1
+            let output = try await conversation(for: input)
+            ledPin.value = 0
+
+            try player.initAudioPlaybackDevice(forPlay: output)
+            try player.startAudioPlaying()
+        } catch {
+            print("send conversation error: \(error)")
+        }
+    }
+}
+
+func conversation(for data: Data) async throws -> Data {
     let aQuery = AudioTranscriptionQuery(
         file: data,
         fileType: .wav,
@@ -72,27 +124,8 @@ func conversation() async throws {
         speed: 1.0
     )
     let ttsResult = try await ttsClient.audioCreateSpeech(query: sQuery)
-    var audioBuffer: [UInt8] = []
-    ttsResult.audio.withUnsafeBytes{ audioBuffer.append(contentsOf: $0) }
-
-
-    let sound = Raylib.loadSoundFromWave(Raylib.LoadWaveFromMemory(".wav", audioBuffer, Int32(audioBuffer.count)))
-    Raylib.playSound(sound)
-    while Raylib.isSoundPlaying(sound) {
-        // nothing to do
-    }
-    Raylib.unloadSound(sound)
+    return ttsResult.audio
 }
 
-
-Raylib.initAudioDevice()
-try await conversation()
-print("Press enter to exit...")
-while true {
-    if let input = readLine() {
-        if input.isEmpty {
-            break
-        }
-    }
-}
-Raylib.closeAudioDevice()
+// not exit
+_ = readLine()
