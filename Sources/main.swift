@@ -128,5 +128,5 @@ func conversation(for data: Data) async throws -> Data {
     return ttsResult.audio
 }
 
-// not exit
-_ = readLine()
+// run event loop
+RunLoop.current.run()
