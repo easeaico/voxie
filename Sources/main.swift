@@ -35,8 +35,7 @@ struct Config: Codable {
     }
 }
 
-let configFile = Bundle.module.url(forResource: "Config", withExtension: "toml")!
-let configData = try String(contentsOf: configFile, encoding: .utf8)
+let configData = try String(contentsOf: URL(fileURLWithPath: "Config.toml"), encoding: .utf8)
 let config = try TOMLDecoder().decode(Config.self, from: configData)
 
 

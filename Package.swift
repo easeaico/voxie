@@ -26,7 +26,6 @@ let package = Package(
             name: "voxie", 
             dependencies: ["OpenAI", "TOMLKit", "MiniAudio", "SwiftyGPIO"],
             resources: [
-                .process("Config.toml"),
             ]
         ),
     ]
