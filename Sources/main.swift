@@ -3,9 +3,7 @@ import MiniAudio
 import TOMLKit
 import Foundation
 import SwiftyGPIO
-
-let ledPinNo = 16;
-let btnPinNo = 17;
+import Logging
 
 struct Config: Codable {
     let asr: ASR
@@ -35,9 +33,17 @@ struct Config: Codable {
     }
 }
 
-let configData = try String(contentsOf: URL(fileURLWithPath: "Config.toml"), encoding: .utf8)
-let config = try TOMLDecoder().decode(Config.self, from: configData)
+let logger = Logger(label: "co.easeai.voxie")
 
+let config: Config
+do {
+    let configData = try String(contentsOf: URL(fileURLWithPath: "Config.toml"), encoding: .utf8)
+    config = try TOMLDecoder().decode(Config.self, from: configData)
+}
+catch {
+    logger.error("read Config.toml error: \(error)")
+    exit(-1)
+}
 
 let asrConfig = OpenAI.Configuration(token: config.asr.apiKey, host: config.asr.host, port: config.asr.port, scheme: config.asr.scheme)
 let asrClient = OpenAI(configuration: asrConfig)
@@ -72,7 +78,7 @@ btnPin.onFalling { gpio in
         try capturer.initAudioCaptureDevice(EncodingFormat.wav, AudioFormat.s16, 1, 16000)
         try capturer.startAudioCapturing()
     } catch {
-        print("start audio capturing error: \(error)")
+        logger.error("start audio capturing error: \(error)")
     }
 }
 
@@ -94,7 +100,7 @@ btnPin.onRaising { gpio in
             try player.initAudioPlaybackDevice(forPlay: output)
             try player.startAudioPlaying()
         } catch {
-            print("send conversation error: \(error)")
+            logger.error("send conversation error: \(error)")
         }
     }
 }
@@ -106,7 +112,7 @@ func conversation(for data: Data) async throws -> Data {
         model: .whisper_1
     )
     let asrResult = try await asrClient.audioTranscriptions(query: aQuery)
-    print(asrResult.text)
+    logger.info("audio transcription result: \(asrResult.text)")
 
     let cQuery = ChatQuery(
         messages: [.init(role: .user, content: asrResult.text)!],
@@ -114,7 +120,7 @@ func conversation(for data: Data) async throws -> Data {
     )
     let chatResult = try await llmClient.chats(query: cQuery)
     let content = chatResult.choices[0].message.content!.string!
-    print(content)
+    logger.info("ai chat result: \(content)")
     
     let sQuery = AudioSpeechQuery(
         model: .tts_1,
@@ -124,8 +130,11 @@ func conversation(for data: Data) async throws -> Data {
         speed: 1.0
     )
     let ttsResult = try await ttsClient.audioCreateSpeech(query: sQuery)
+    logger.info("tts result, data size: \(ttsResult.audio.count)")
     return ttsResult.audio
 }
 
 // run event loop
-RunLoop.current.run()
+//RunLoop.current.run()
+logger.info("wait for servicing")
+_ = readLine()

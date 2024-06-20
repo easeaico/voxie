@@ -1,5 +1,5 @@
 {
-  "originHash" : "ad988c96028fa4ddfda244c95be458c169debba718fda2afe5beaf4d873921e1",
+  "originHash" : "b1f0caa1c77ccff02f31ce8cb8bda08c5b0e5dcb6132732b5ebd794b2089ff4d",
   "pins" : [
     {
       "identity" : "miniaudio",
@@ -17,6 +17,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "fd13a41e987004d14f1793c570721953a2767b03"
+      }
+    },
+    {
+      "identity" : "swift-log",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-log.git",
+      "state" : {
+        "revision" : "e97a6fcb1ab07462881ac165fdbb37f067e205d5",
+        "version" : "1.5.4"
       }
     },
     {
