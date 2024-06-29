@@ -2,8 +2,21 @@ import OpenAI
 import MiniAudio
 import TOMLKit
 import Foundation
-import SwiftyGPIO
 import Logging
+import wiringPi
+
+let logger = Logger(label: "co.easeai.voxie")
+
+let btnPin: Int32 = 17
+// uses BCM numbering of the GPIOs and directly accesses the GPIO registers.
+wiringPiSetupGpio();
+
+// pin mode ..(INPUT, OUTPUT, PWM_OUTPUT, GPIO_CLOCK)
+// set pin 0 to input
+pinMode(btnPin, INPUT);
+
+// pull up/down mode (PUD_OFF, PUD_UP, PUD_DOWN) => down
+pullUpDnControl(btnPin, PUD_UP);
 
 struct Config: Codable {
     let asr: ASR
@@ -23,6 +36,7 @@ struct Config: Codable {
         let host: String
         let port: Int
         let apiKey: String
+        let model: String
     }
     
     struct TTS: Codable {
@@ -30,10 +44,10 @@ struct Config: Codable {
         let host: String
         let port: Int
         let apiKey: String
+        let model: String
     }
 }
 
-let logger = Logger(label: "co.easeai.voxie")
 
 let config: Config
 do {
@@ -54,54 +68,42 @@ let ttsClient = OpenAI(configuration: ttsConfig)
 let llmConfig = OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme)
 let llmClient = OpenAI(configuration: llmConfig)
 
-let capturer = AudioCapturer()
-let player = AudioPlayer()
 
-let gpios = SwiftyGPIO.GPIOs(for: .RaspberryPiZero2)
-let ledPin = gpios[.P16]!
-ledPin.direction = .OUT
-
-let btnPin = gpios[.P17]!
-btnPin.pull = .up
-btnPin.direction = .IN
-btnPin.bounceTime = 1
-
-btnPin.onFalling { gpio in 
-    // light on
-    ledPin.value = 1
-
-    // close play device
-    player.closeAudioPlaybackDevice()
-
-    // start to capture
+Task {
     do {
-        try capturer.initAudioCaptureDevice(EncodingFormat.wav, AudioFormat.s16, 1, 16000)
-        try capturer.startAudioCapturing()
-    } catch {
-        logger.error("start audio capturing error: \(error)")
-    }
-}
-
-btnPin.onRaising { gpio in 
-    // light off
-    ledPin.value = 0
-    // close capture
-    capturer.closeAudioCaptureDevice()
-    // send conversation
-    let input = capturer.getData()
-
-    // start to capture
-    Task {
-        do {
-            ledPin.value = 1
-            let output = try await conversation(for: input)
-            ledPin.value = 0
-
-            try player.initAudioPlaybackDevice(forPlay: output)
-            try player.startAudioPlaying()
-        } catch {
-            logger.error("send conversation error: \(error)")
+        while HIGH == digitalRead(btnPin) {
+            delay(200)
         }
+        logger.info("button pushed")
+
+        // start to capture
+        let capturer = AudioCapturer()
+        do {
+            try capturer.initAudioCaptureDevice(EncodingFormat.wav, AudioFormat.s16, 1, 16000)
+            try capturer.startAudioCapturing()
+        } catch {
+            logger.error("start audio capturing error: \(error)")
+        }
+        
+        while LOW == digitalRead(btnPin) {
+            delay(200)
+        }
+        logger.info("button released")
+
+        // close capture
+        capturer.closeAudioCaptureDevice()
+        // send conversation
+        let input = capturer.getData()
+        let output = try await conversation(for: input)
+
+        let player = AudioPlayer()
+        try player.initAudioPlaybackDevice(forPlay: output)
+        try player.startAudioPlaying()
+        Thread.sleep(forTimeInterval: Double(player.getDuration()))
+        // close play device
+        player.closeAudioPlaybackDevice()
+    } catch {
+        logger.error("send conversation error: \(error)")
     }
 }
 
@@ -109,10 +111,12 @@ func conversation(for data: Data) async throws -> Data {
     let aQuery = AudioTranscriptionQuery(
         file: data,
         fileType: .wav,
-        model: .whisper_1
+        model: config.asr.model,
+        responseFormat: .text
     )
+    logger.info("audio transcription query: \(aQuery)")
     let asrResult = try await asrClient.audioTranscriptions(query: aQuery)
-    logger.info("audio transcription result: \(asrResult.text)")
+    logger.info("audio transcription result: \(asrResult)")
 
     let cQuery = ChatQuery(
         messages: [.init(role: .user, content: asrResult.text)!],
@@ -123,7 +127,7 @@ func conversation(for data: Data) async throws -> Data {
     logger.info("ai chat result: \(content)")
     
     let sQuery = AudioSpeechQuery(
-        model: .tts_1,
+        model: config.tts.model,
         input: content,
         voice: .alloy,
         responseFormat: .mp3, 
@@ -135,6 +139,5 @@ func conversation(for data: Data) async throws -> Data {
 }
 
 // run event loop
-//RunLoop.current.run()
 logger.info("wait for servicing")
 _ = readLine()

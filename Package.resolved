@@ -1,5 +1,5 @@
 {
-  "originHash" : "b1f0caa1c77ccff02f31ce8cb8bda08c5b0e5dcb6132732b5ebd794b2089ff4d",
+  "originHash" : "1f9e4a594a86a09b1cf86a9ad86e0fb47edcf8aa1c2300d4a30e6d6bfd95e028",
   "pins" : [
     {
       "identity" : "miniaudio",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/easeaico/MiniAudio.git",
       "state" : {
         "branch" : "main",
-        "revision" : "5ae2615c4169fbc6998fd0665fe1ee65365cb99c"
+        "revision" : "b38ef6f732b8370b5fb0bab6884ede9f647c655d"
       }
     },
     {
@@ -24,17 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log.git",
       "state" : {
-        "revision" : "e97a6fcb1ab07462881ac165fdbb37f067e205d5",
-        "version" : "1.5.4"
-      }
-    },
-    {
-      "identity" : "swiftygpio",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/uraimo/SwiftyGPIO.git",
-      "state" : {
-        "revision" : "b86215de6ecde8e6649590978164a5532ef7a975",
-        "version" : "1.4.4"
+        "revision" : "9cb486020ebf03bfa5b5df985387a14a98744537",
+        "version" : "1.6.1"
       }
     },
     {

@@ -1,14 +1,26 @@
 [asr]
-scheme = "http"
-host = "192.168.88.48"
-port = 8050
-apiKey = ""
+scheme = "https"
+#host = "easeai.co"
+host = "api.openai.com"
+port = 443
+apiKey = "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"
+#apiKey = "ea-f8c28c7d021644e0bc8c0759d9772fe0"
+#scheme = "http"
+#host = "192.168.88.48"
+#port = 8055
+#apiKey = "ea-496e9d28e1834c42b89c90fe8daa6ca0"
+model = "whisper-1"
 
 [tts]
-scheme = "http"
-host = "192.168.88.48"
-port = 8051
-apiKey = ""
+scheme = "https"
+host = "easeai.co"
+port = 443
+apiKey = "ea-f8c28c7d021644e0bc8c0759d9772fe0"
+model = "tts-1"
+#scheme = "http"
+#host = "192.168.88.48"
+#port = 8051
+#apiKey = ""
 
 [llm]
 scheme = "https"

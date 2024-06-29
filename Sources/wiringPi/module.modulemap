@@ -1,0 +1,4 @@
+module wiringPi {
+    umbrella header "wiringPi.h"
+    link "wiringPi"
+}
