@@ -31,6 +31,7 @@ while(true) {
         let output = try await conversation.chat(for: input)
 
         let player = try startPlayback(for: output)
+        log.info("waiting for player, seconds: \(player.getDuration())")
         waitButtonClick(timeout: UInt64(player.getDuration() * 1000))
         endPlayback(for: player)
     } catch {
