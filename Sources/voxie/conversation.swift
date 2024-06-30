@@ -22,37 +22,77 @@ class Conversation {
 
         self.messages = []
     }
+    
+    func doChatResp() async throws {
+        let query = ChatQuery(
+            messages: self.messages,
+            model: self.config.llm.model
+        )
+        
+        var content = ""
+        var paragraph = ""
+        for try await result in self.llmClient.chatsStream(query: query) {
+            guard let current = result.choices[0].delta.content else {
+                continue
+            }
+            
+            paragraph.append(current)
+            content.append(current)
+            
+            let lines = paragraph.split(separator: "\n")
+            let count = lines.count
+            if count <= 1 {
+                continue
+            }
+            
+            for i in 0...(count-2){
+                let sQuery = AudioSpeechQuery(
+                    model: self.config.tts.model,
+                    input: String(lines[i]),
+                    voice: .alloy,
+                    responseFormat: .mp3,
+                    speed: 1.0
+                )
+                let ttsResult = try await self.ttsClient.audioCreateSpeech(query: sQuery)
+                log.info("tts result, data size: \(ttsResult.audio.count)")
+                
+                let player = try startPlayback(for: ttsResult.audio)
+                sleep(player.getDuration())
+                endPlayback(for: player)
+            }
+            paragraph = String(lines[count - 1])
+        }
+        
+        if !paragraph.isEmpty {
+            let sQuery = AudioSpeechQuery(
+                model: self.config.tts.model,
+                input: paragraph,
+                voice: .alloy,
+                responseFormat: .mp3,
+                speed: 1.0
+            )
+            let ttsResult = try await self.ttsClient.audioCreateSpeech(query: sQuery)
+            log.info("tts result, data size: \(ttsResult.audio.count)")
+            
+            let player = try startPlayback(for: ttsResult.audio)
+            sleep(player.getDuration())
+            endPlayback(for: player)
+        }
+        
+        let assistantMsg = ChatQuery.ChatCompletionMessageParam(role: .assistant, content: content)
+        self.messages.append(assistantMsg!)
+    }
 
-    func bootstrap() async throws -> Data {
+    func bootstrap() async throws {
         let systemMsg = ChatQuery.ChatCompletionMessageParam(role: .system, content: self.config.prompts.system)
         let userMsg = ChatQuery.ChatCompletionMessageParam(role: .system, content: self.config.prompts.first)
         self.messages.append(systemMsg!)
         self.messages.append(userMsg!)
-
-        let cQuery = ChatQuery(
-            messages: self.messages,
-            model: self.config.llm.model
-        )
-        let chatResult = try await self.llmClient.chats(query: cQuery)
-        let assistantMsg = chatResult.choices[0].message
-        self.messages.append(assistantMsg)
-
-        let content = assistantMsg.content!.string!
-        log.info("ai chat result: \(content)")
         
-        let sQuery = AudioSpeechQuery(
-            model: self.config.tts.model,
-            input: content,
-            voice: .alloy,
-            responseFormat: .mp3,
-            speed: 1.0
-        )
-        let ttsResult = try await self.ttsClient.audioCreateSpeech(query: sQuery)
-        log.info("tts result, data size: \(ttsResult.audio.count)")
-        return ttsResult.audio
+        try await self.doChatResp()
     }
 
-    func chat(for data: Data) async throws -> Data {
+    func chat(for data: Data) async throws {
         let aQuery = AudioTranscriptionQuery(
             file: data,
             fileType: .wav,
@@ -66,26 +106,6 @@ class Conversation {
         let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: asrResult.text)
         self.messages.append(userMsg!)
 
-        let cQuery = ChatQuery(
-            messages: self.messages,
-            model: self.config.llm.model
-        )
-        let chatResult = try await self.llmClient.chats(query: cQuery)
-        let assistantMsg = chatResult.choices[0].message
-        self.messages.append(assistantMsg)
-
-        let content = assistantMsg.content!.string!
-        log.info("ai chat result: \(content)")
-        
-        let sQuery = AudioSpeechQuery(
-            model: self.config.tts.model,
-            input: content,
-            voice: .alloy,
-            responseFormat: .mp3,
-            speed: 1.0
-        )
-        let ttsResult = try await self.ttsClient.audioCreateSpeech(query: sQuery)
-        log.info("tts result, data size: \(ttsResult.audio.count)")
-        return ttsResult.audio
+        try await self.doChatResp()
     }
 }

@@ -9,13 +9,12 @@ let btn = gpio.setupPullUpButton(for: 17)
 let conf = loadConfig()
 let conversation = Conversation(config: conf) 
 
-let dispatchGroup = DispatchGroup()
-let dispatchQueue = DispatchQueue(label: "co.easeai.voxie")
 
- let output = try await conversation.bootstrap()
- let player = try startPlayback(for: output)
- sleep(player.getDuration())
- endPlayback(for: player)
+do {
+    try await conversation.bootstrap()
+} catch {
+    log.error("boot conversation error: \(error)")
+}
 
 // Main Loop
 while(true) {
@@ -29,12 +28,7 @@ while(true) {
         log.info("button released")
 
         let input = endCapture(for: capturer)
-        let output = try await conversation.chat(for: input)
-
-        let player = try startPlayback(for: output)
-        log.info("waiting for player, seconds: \(player.getDuration())")
-        btn.untilClick(timeout: UInt64(player.getDuration() * 1000))
-        endPlayback(for: player)
+        try await conversation.chat(for: input)
     } catch {
         log.error("chat conversation error: \(error)")
     }
