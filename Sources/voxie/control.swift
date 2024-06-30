@@ -17,9 +17,8 @@ func setupDevice(for pin: Int32) {
 
 func waitButtonPress() {
 #if os(Linux)
-    if HIGH == digitalRead(btnPin) {
+    while HIGH == digitalRead(btnPin) {
         delay(TimerInterval)
-        waitButtonPress()
     }
 #else
     _ = readLine()
@@ -29,9 +28,8 @@ func waitButtonPress() {
 
 func waitButtonRelease() {
 #if os(Linux)
-    if LOW == digitalRead(btnPin) {
+    while LOW == digitalRead(btnPin) {
         delay(TimerInterval)
-        waitButtonRelease()
     }
 #else
     _ = readLine()
@@ -42,24 +40,28 @@ func waitButtonRelease() {
 func waitButtonClick(timeout ms: UInt64) {
 #if os(Linux)
     var time = ms
-    if HIGH == digitalRead(btnPin) {
+
+    while HIGH == digitalRead(btnPin) {
         delay(TimerInterval)
         time -= UInt64(TimerInterval)
         if time <= 0 {
             return
         }
-
-        waitButtonClick(timeout: time)
-    } else {
-        delay(TimerInterval)
-        time -= UInt64(TimerInterval)
-        if time <= 0 || HIGH == digitalRead(btnPin) {
-            return
-        }
-
-        waitButtonClick(timeout: time)
     }
 
+    delay(TimerInterval)
+    time -= UInt64(TimerInterval)
+    if time <= 0 {
+        return
+    }
+
+    while LOW == digitalRead(btnPin) {
+        delay(TimerInterval)
+        time -= UInt64(TimerInterval)
+        if time <= 0 {
+            return
+        }
+    }
 #else
     _ = readLine()
 #endif
