@@ -43,7 +43,7 @@ func waitButtonClick(timeout ms: UInt64) {
 #if os(Linux)
     if HIGH == digitalRead(btnPin) {
         delay(TimerInterval)
-        ms -= TimerInterval
+        ms -= UInt64(TimerInterval)
         if ms <= 0 {
             return
         }
@@ -51,7 +51,7 @@ func waitButtonClick(timeout ms: UInt64) {
         waitButtonClick(timeout: ms)
     } else {
         delay(TimerInterval)
-        ms -= TimerInterval
+        ms -= UInt64(TimerInterval)
         if ms <= 0 || HIGH == digitalRead(btnPin) {
             return
         }
