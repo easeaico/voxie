@@ -11,6 +11,7 @@ import wiringPi
 let logger = Logger(label: "co.easeai.voxie")
 
 #if os(Linux)
+logger.info("linux detected")
 let btnPin: Int32 = 17
 // uses BCM numbering of the GPIOs and directly accesses the GPIO registers.
 wiringPiSetupGpio();
@@ -76,7 +77,7 @@ let llmClient = OpenAI(configuration: llmConfig)
 
 func waitButtonPress() {
 #if os(Linux)
-    if HIGH == digitalRead(btnPin) {
+    while HIGH == digitalRead(btnPin) {
         delay(300)
     }
 #else
