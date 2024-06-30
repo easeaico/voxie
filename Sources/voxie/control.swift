@@ -3,12 +3,14 @@ import wiringPi
 #endif
 
 let TimerInterval = 300
+var btnPin = 0
 
 func setupDevice(for pin: Int32) {
 #if os(Linux)
     wiringPiSetupGpio();
     pinMode(pin, INPUT);
-    pullUpDnControl(btnPin, PUD_UP);
+    pullUpDnControl(pin, PUD_UP);
+    btnPin = pin
 #endif
 }
 
