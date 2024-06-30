@@ -41,22 +41,23 @@ func waitButtonRelease() {
 
 func waitButtonClick(timeout ms: UInt64) {
 #if os(Linux)
+    var time = ms
     if HIGH == digitalRead(btnPin) {
         delay(TimerInterval)
-        ms -= UInt64(TimerInterval)
-        if ms <= 0 {
+        time -= UInt64(TimerInterval)
+        if time <= 0 {
             return
         }
 
-        waitButtonClick(timeout: ms)
+        waitButtonClick(timeout: time)
     } else {
         delay(TimerInterval)
-        ms -= UInt64(TimerInterval)
-        if ms <= 0 || HIGH == digitalRead(btnPin) {
+        time -= UInt64(TimerInterval)
+        if time <= 0 || HIGH == digitalRead(btnPin) {
             return
         }
 
-        waitButtonClick(timeout: ms)
+        waitButtonClick(timeout: time)
     }
 
 #else
