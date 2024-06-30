@@ -3,7 +3,8 @@ import Logging
 
 let log = Logger(label: "co.easeai.voxie")
 
-setupDevice(for: 17)
+let gpio = GPIO()
+let btn = gpio.setupPullUpButton(for: 17)
 
 let conf = loadConfig()
 let conversation = Conversation(config: conf) 
@@ -20,11 +21,11 @@ let dispatchQueue = DispatchQueue(label: "co.easeai.voxie")
 while(true) {
     log.info("waiting for serve")
     do {
-        waitButtonPress()
+        btn.untilPress()
         log.info("button pressed")
 
         let capturer = try startCapture()
-        waitButtonRelease()
+        btn.untilRelease()
         log.info("button released")
 
         let input = endCapture(for: capturer)
@@ -32,7 +33,7 @@ while(true) {
 
         let player = try startPlayback(for: output)
         log.info("waiting for player, seconds: \(player.getDuration())")
-        waitButtonClick(timeout: UInt64(player.getDuration() * 1000))
+        btn.untilClick(timeout: UInt64(player.getDuration() * 1000))
         endPlayback(for: player)
     } catch {
         log.error("chat conversation error: \(error)")
