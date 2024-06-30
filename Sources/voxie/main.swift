@@ -3,10 +3,14 @@ import MiniAudio
 import TOMLKit
 import Foundation
 import Logging
+
+#if os(Linux)
 import wiringPi
+#endif
 
 let logger = Logger(label: "co.easeai.voxie")
 
+#if os(Linux)
 let btnPin: Int32 = 17
 // uses BCM numbering of the GPIOs and directly accesses the GPIO registers.
 wiringPiSetupGpio();
@@ -17,6 +21,7 @@ pinMode(btnPin, INPUT);
 
 // pull up/down mode (PUD_OFF, PUD_UP, PUD_DOWN) => down
 pullUpDnControl(btnPin, PUD_UP);
+#endif
 
 struct Config: Codable {
     let asr: ASR
@@ -51,7 +56,8 @@ struct Config: Codable {
 
 let config: Config
 do {
-    let configData = try String(contentsOf: URL(fileURLWithPath: "Config.toml"), encoding: .utf8)
+    let path = Bundle.module.url(forResource: "Config", withExtension: "toml")
+    let configData = try String(contentsOf: path!, encoding: .utf8)
     config = try TOMLDecoder().decode(Config.self, from: configData)
 }
 catch {
@@ -68,43 +74,25 @@ let ttsClient = OpenAI(configuration: ttsConfig)
 let llmConfig = OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme)
 let llmClient = OpenAI(configuration: llmConfig)
 
-
-Task {
-    do {
-        while HIGH == digitalRead(btnPin) {
-            delay(200)
-        }
-        logger.info("button pushed")
-
-        // start to capture
-        let capturer = AudioCapturer()
-        do {
-            try capturer.initAudioCaptureDevice(EncodingFormat.wav, AudioFormat.s16, 1, 16000)
-            try capturer.startAudioCapturing()
-        } catch {
-            logger.error("start audio capturing error: \(error)")
-        }
-        
-        while LOW == digitalRead(btnPin) {
-            delay(200)
-        }
-        logger.info("button released")
-
-        // close capture
-        capturer.closeAudioCaptureDevice()
-        // send conversation
-        let input = capturer.getData()
-        let output = try await conversation(for: input)
-
-        let player = AudioPlayer()
-        try player.initAudioPlaybackDevice(forPlay: output)
-        try player.startAudioPlaying()
-        Thread.sleep(forTimeInterval: Double(player.getDuration()))
-        // close play device
-        player.closeAudioPlaybackDevice()
-    } catch {
-        logger.error("send conversation error: \(error)")
+func waitButtonPress() {
+#if os(Linux)
+    if HIGH == digitalRead(btnPin) {
+        delay(300)
     }
+#else
+    _ = readLine()
+#endif
+}
+
+
+func waitButtonRelease() {
+#if os(Linux)
+    while LOW == digitalRead(btnPin) {
+        delay(300)
+    }
+#else
+    _ = readLine()
+#endif
 }
 
 func conversation(for data: Data) async throws -> Data {
@@ -112,7 +100,7 @@ func conversation(for data: Data) async throws -> Data {
         file: data,
         fileType: .wav,
         model: config.asr.model,
-        responseFormat: .text
+        responseFormat: .json
     )
     logger.info("audio transcription query: \(aQuery)")
     let asrResult = try await asrClient.audioTranscriptions(query: aQuery)
@@ -130,7 +118,7 @@ func conversation(for data: Data) async throws -> Data {
         model: config.tts.model,
         input: content,
         voice: .alloy,
-        responseFormat: .mp3, 
+        responseFormat: .mp3,
         speed: 1.0
     )
     let ttsResult = try await ttsClient.audioCreateSpeech(query: sQuery)
@@ -138,6 +126,32 @@ func conversation(for data: Data) async throws -> Data {
     return ttsResult.audio
 }
 
-// run event loop
-logger.info("wait for servicing")
-_ = readLine()
+// Main Loop
+while(true) {
+    logger.info("waiting for serve")
+    do {
+        waitButtonPress()
+        logger.info("button pressed")
+
+        let capturer = AudioCapturer()
+        try capturer.initAudioCaptureDevice(EncodingFormat.wav, AudioFormat.s16, 1, 16000)
+        try capturer.startAudioCapturing()
+        
+        waitButtonRelease()
+        logger.info("button released")
+
+        capturer.closeAudioCaptureDevice()
+        
+        let input = capturer.getData()
+        let output = try await conversation(for: input)
+        
+        let player = AudioPlayer()
+        try player.initAudioPlaybackDevice(forPlay: output)
+        try player.startAudioPlaying()
+        sleep(player.getDuration())
+        player.closeAudioPlaybackDevice()
+    } catch {
+        logger.error("chat conversation error: \(error)")
+    }
+}
+

@@ -34,6 +34,9 @@ let package = Package(
                 "TOMLKit", 
                 "MiniAudio", 
                 .product(name: "Logging", package: "swift-log")
+            ],
+            resources: [
+                .process("Config.toml")
             ]
         ),
     ]

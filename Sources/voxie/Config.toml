@@ -1,8 +1,8 @@
 [asr]
 scheme = "https"
 #host = "easeai.co"
-host = "api.openai.com"
 port = 443
+host = "api.openai.com"
 apiKey = "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"
 #apiKey = "ea-f8c28c7d021644e0bc8c0759d9772fe0"
 #scheme = "http"
@@ -13,9 +13,11 @@ model = "whisper-1"
 
 [tts]
 scheme = "https"
-host = "easeai.co"
 port = 443
-apiKey = "ea-f8c28c7d021644e0bc8c0759d9772fe0"
+#host = "easeai.co"
+#apiKey = "ea-f8c28c7d021644e0bc8c0759d9772fe0"
+host = "api.openai.com"
+apiKey = "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"
 model = "tts-1"
 #scheme = "http"
 #host = "192.168.88.48"
