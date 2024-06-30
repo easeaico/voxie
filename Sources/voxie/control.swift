@@ -2,7 +2,7 @@
 import wiringPi
 #endif
 
-let TimerInterval = 300
+let TimerInterval: UInt32 = 300
 var btnPin: Int32 = 0
 
 func setupDevice(for pin: Int32) {
