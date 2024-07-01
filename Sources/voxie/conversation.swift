@@ -1,5 +1,6 @@
 import Foundation
 import OpenAI
+import MiniAudio
 
 class Conversation {
     let config: Config
@@ -31,6 +32,9 @@ class Conversation {
         
         var content = ""
         var paragraph = ""
+        
+        let player = AudioPlayer()
+        
         for try await result in self.llmClient.chatsStream(query: query) {
             guard let current = result.choices[0].delta.content else {
                 continue
@@ -55,10 +59,7 @@ class Conversation {
                 )
                 let ttsResult = try await self.ttsClient.audioCreateSpeech(query: sQuery)
                 log.info("tts result, data size: \(ttsResult.audio.count)")
-                
-                let player = try startPlayback(for: ttsResult.audio)
-                sleep(player.getDuration())
-                endPlayback(for: player)
+                try blockPlayback(for: ttsResult.audio, player)
             }
             paragraph = String(lines[count - 1])
         }
@@ -74,10 +75,9 @@ class Conversation {
             let ttsResult = try await self.ttsClient.audioCreateSpeech(query: sQuery)
             log.info("tts result, data size: \(ttsResult.audio.count)")
             
-            let player = try startPlayback(for: ttsResult.audio)
-            sleep(player.getDuration())
-            endPlayback(for: player)
+            try blockPlayback(for: ttsResult.audio, player)
         }
+        player.closePlaybackDevice()
         
         let assistantMsg = ChatQuery.ChatCompletionMessageParam(role: .assistant, content: content)
         self.messages.append(assistantMsg!)

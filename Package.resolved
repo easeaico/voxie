@@ -1,5 +1,5 @@
 {
-  "originHash" : "69834ba1b9bdf2c5a8bc7b1ccbdc4c8203a468f89130285ea9b6b7d8068755e6",
+  "originHash" : "1f9e4a594a86a09b1cf86a9ad86e0fb47edcf8aa1c2300d4a30e6d6bfd95e028",
   "pins" : [
     {
       "identity" : "miniaudio",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/easeaico/MiniAudio.git",
       "state" : {
         "branch" : "main",
-        "revision" : "b9805bbf0d620793f5f8ad92d966e6bb3d8bca96"
+        "revision" : "9c5b1d4888255b26fcedb5ea34134eb45b4981fb"
       }
     },
     {
