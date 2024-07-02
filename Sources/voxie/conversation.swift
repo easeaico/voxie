@@ -10,8 +10,10 @@ class Conversation {
     let llmClient: OpenAI
 
     var messages: [ChatQuery.ChatCompletionMessageParam]
+    
+    let player: AudioPlayActor
 
-    init(config: Config) {
+    init(config: Config, player: AudioPlayActor) {
         self.config = config
 
         self.asrClient = OpenAI(configuration: 
@@ -22,6 +24,7 @@ class Conversation {
             OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme, timeoutInterval: 120))
 
         self.messages = []
+        self.player = player
     }
     
     func speechRequest(for input: String) async throws -> Data {
@@ -45,8 +48,6 @@ class Conversation {
         var content = ""
         var paragraph = ""
         
-        let audioPlayer = AudioPlayActor()
-        
         for try await result in self.llmClient.chatsStream(query: query) {
             guard let current = result.choices[0].delta.content else {
                 continue
@@ -63,16 +64,16 @@ class Conversation {
             
             for i in 0...(count-2){
                 let audio = try await speechRequest(for: String(lines[i]))
-                await audioPlayer.addAudio(data: audio)
+                await self.player.addAudio(data: audio)
             }
             paragraph = String(lines[count - 1])
         }
         
         if !paragraph.isEmpty {
             let audio = try await speechRequest(for: paragraph)
-            await audioPlayer.addAudio(data: audio)
+            await self.player.addAudio(data: audio)
         }
-        await audioPlayer.done()
+        await self.player.done()
         
         let assistantMsg = ChatQuery.ChatCompletionMessageParam(role: .assistant, content: content)
         self.messages.append(assistantMsg!)

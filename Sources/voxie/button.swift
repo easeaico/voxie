@@ -32,30 +32,26 @@ class PullUpButton {
     }
 
 
-    func untilClick(timeout ms: UInt64) {
+    func untilClick(for check: () async ->Bool) {
     #if os(Linux)
-        var time = ms
-
         while HIGH == digitalRead(self.btnPin) {
-            delay(TimerInterval)
-            time -= UInt64(TimerInterval)
-            if time <= 0 {
+            if await check() {
                 return
             }
+            
+            delay(TimerInterval)
         }
-
-        delay(TimerInterval)
-        time -= UInt64(TimerInterval)
-        if time <= 0 {
+        
+        if await check() {
             return
         }
-
+        delay(TimerInterval)
+        
         while LOW == digitalRead(self.btnPin) {
-            delay(TimerInterval)
-            time -= UInt64(TimerInterval)
-            if time <= 0 {
+            if await check() {
                 return
             }
+            delay(TimerInterval)
         }
     #else
         _ = readLine()

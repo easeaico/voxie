@@ -1,55 +1,103 @@
 import MiniAudio
 import Foundation
 
-func startCapture() throws -> AudioCapturer {
-    let capturer = AudioCapturer()
-    try capturer.initCaptureDevice(EncodingFormat.wav, AudioFormat.s16, 1, 16000)
-    try capturer.startAudioCapturing()
-
-    return capturer
-}
-
-func endCapture(for capturer: AudioCapturer) -> Data {
-    capturer.closeCaptureDevice()
-    return capturer.getData()
-}
-
-func playData(for player: AudioPlayer, _ data: Data) throws {
-    try player.initDeviceOrUpdate(for: data)
-    try player.startAudioPlaying()
-    sleep(player.getDuration())
-    try player.stopAudioPlaying()
+actor AudioCaptureActor {
+    enum CaptureState {
+        case inited
+        case started
+        case stopped
+    }
+    
+    enum CaptureError : Error {
+        case notFinish
+    }
+    
+    private let capturer: AudioCapturer
+    private var state: CaptureState
+    
+    init() {
+        self.capturer = AudioCapturer()
+        self.state = .inited
+    }
+    
+    func startCapture() throws {
+        try self.capturer.initCaptureDevice(EncodingFormat.wav, AudioFormat.s16, 1, 16000)
+        try self.capturer.startAudioCapturing()
+        self.state = .started
+    }
+    
+    func stopCapture() {
+        self.capturer.closeCaptureDevice()
+        self.state = .stopped
+    }
+    
+    func getData() throws -> Data {
+        if self.state == .stopped {
+            return self.capturer.getData()
+        }
+        
+        throw CaptureError.notFinish
+    }
 }
 
 actor AudioPlayActor {
+    enum PlayState {
+        case inited
+        case playing
+        case played
+        case cancelled
+        case done
+    }
+    
     private var datas: [Data]
-    private var isDone: Bool
     private let player: AudioPlayer
+    private var state: PlayState
 
     init() {
         self.player = AudioPlayer()
         self.datas = [Data]()
-        self.isDone = false
+        self.state = .inited
         
         Task {
             while true {
-                if await self.isDone {
+                let state = await self.state
+                if state == .cancelled || state == .done {
                     break
                 }
                 
                 if await hasNext() {
-                    try playData(for: player, await nextAudio())
+                    try await playNext()
                 } else {
                     try await Task.sleep(nanoseconds: 200 * 1_000)
                 }
             }
             
-            while await hasNext() {
-                try playData(for: player, await nextAudio())
+            let state = await self.state
+            if state == .done {
+                while await hasNext() {
+                    try await playNext()
+                }
             }
             
-            player.closePlaybackDevice()
+            await closePlayback()
         }
+    }
+    
+    private func closePlayback() {
+        self.state = .played
+        self.player.closePlaybackDevice()
+    }
+    
+    private func playNext() throws {
+        if self.state == .inited {
+            self.state = .playing
+        }
+        
+        let data = self.datas.removeFirst()
+        try player.initDeviceOrUpdate(for: data)
+        try player.startAudioPlaying()
+        sleep(player.getDuration())
+        try player.stopAudioPlaying()
     }
     
     func addAudio(data d: Data){
@@ -60,11 +108,16 @@ actor AudioPlayActor {
         return !self.datas.isEmpty
     }
     
-    func nextAudio() -> Data {
-        return self.datas.removeFirst()
+    func cancel() throws {
+        try player.stopAudioPlaying()
+        self.state = .cancelled
     }
     
     func done() {
-        self.isDone = true
+        self.state = .done
+    }
+    
+    func isPlayed() -> Bool {
+        return self.state == .played
     }
 }
