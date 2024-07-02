@@ -5,11 +5,11 @@ let log = Logger(label: "co.easeai.voxie")
 
 let gpio = GPIO()
 let btn = gpio.setupPullUpButton(for: 17)
-let player = AudioPlayActor()
+
 let capturer = AudioCaptureActor()
 
 let conf = loadConfig()
-let conversation = Conversation(config: conf, player: player)
+let conversation = Conversation(config: conf)
 
 do {
     try await conversation.bootstrap()
@@ -28,9 +28,13 @@ while(true) {
         log.info("button released")
         await capturer.stopCapture()
         
-        try await conversation.chat(for: await capturer.getData())
-        btn.untilClick{ () -> Bool in
-            return await player.isPlayed()
+        let player = AudioPlayActor()
+        try await conversation.chat(for: await capturer.getData(), player)
+        while await player.isPlaying() {
+            if btn.isPressed() {
+                try await player.cancel()
+            }
+            sleep(200)
         }
     } catch {
         log.error("chat conversation error: \(error)")

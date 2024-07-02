@@ -32,29 +32,11 @@ class PullUpButton {
     }
 
 
-    func untilClick(for check: () async ->Bool) {
+    func isPressed() -> Bool {
     #if os(Linux)
-        while HIGH == digitalRead(self.btnPin) {
-            if await check() {
-                return
-            }
-            
-            delay(TimerInterval)
-        }
-        
-        if await check() {
-            return
-        }
-        delay(TimerInterval)
-        
-        while LOW == digitalRead(self.btnPin) {
-            if await check() {
-                return
-            }
-            delay(TimerInterval)
-        }
+        return LOW == digitalRead(self.btnPin)
     #else
-        _ = readLine()
+        return false
     #endif
     }
 }

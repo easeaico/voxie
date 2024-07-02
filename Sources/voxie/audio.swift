@@ -61,38 +61,42 @@ actor AudioPlayActor {
         Task {
             while true {
                 let state = await self.state
-                if state == .cancelled || state == .done {
-                    break
+                switch state {
+                    case .inited:
+                        if await hasNext() {
+                            try await playNext()
+                        }
+                        await self.setState(.playing)
+                    case .playing:
+                        if await hasNext() {
+                            try await playNext()
+                        }
+                    case .done:
+                        if await hasNext() {
+                            try await playNext()
+                        } else {
+                            await self.setState(.played)
+                        }
+                    case .cancelled, .played:
+                        self.player.closePlaybackDevice()
+                        // break task loop
+                        break
                 }
-                
-                if await hasNext() {
-                    try await playNext()
-                } else {
-                    try await Task.sleep(nanoseconds: 200 * 1_000)
-                }
-            }
             
-            let state = await self.state
-            if state == .done {
-                while await hasNext() {
-                    try await playNext()
-                }
+                try await Task.sleep(nanoseconds: 200 * 1_000)
             }
-            
-            await closePlayback()
         }
     }
     
-    private func closePlayback() {
-        self.state = .played
-        self.player.closePlaybackDevice()
+    private func setState(_ state: PlayState) {
+        self.state = state
     }
-    
+
+    private func hasNext() -> Bool {
+        return !self.datas.isEmpty
+    }
+
     private func playNext() throws {
-        if self.state == .inited {
-            self.state = .playing
-        }
-        
         let data = self.datas.removeFirst()
         try player.initDeviceOrUpdate(for: data)
         try player.startAudioPlaying()
@@ -104,20 +108,22 @@ actor AudioPlayActor {
         self.datas.append(d)
     }
     
-    func hasNext() -> Bool {
-        return !self.datas.isEmpty
-    }
-    
     func cancel() throws {
-        try player.stopAudioPlaying()
-        self.state = .cancelled
+        if state == .inited || state == .playing || state == .done {
+            self.state = .cancelled
+            // cancel playing
+            try player.stopAudioPlaying()
+        }
     }
     
     func done() {
-        self.state = .done
+        if state == .inited || state == .playing {
+            self.state = .done
+        }
     }
     
-    func isPlayed() -> Bool {
-        return self.state == .played
+    func isPlaying() -> Bool {
+        let state = self.state
+        return state != .played && state != .cancelled
     }
 }

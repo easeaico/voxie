@@ -11,9 +11,7 @@ class Conversation {
 
     var messages: [ChatQuery.ChatCompletionMessageParam]
     
-    let player: AudioPlayActor
-
-    init(config: Config, player: AudioPlayActor) {
+    init(config: Config) {
         self.config = config
 
         self.asrClient = OpenAI(configuration: 
@@ -24,7 +22,6 @@ class Conversation {
             OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme, timeoutInterval: 120))
 
         self.messages = []
-        self.player = player
     }
     
     func speechRequest(for input: String) async throws -> Data {
@@ -39,7 +36,7 @@ class Conversation {
         return ttsResult.audio
     }
     
-    func doChatResp() async throws {
+    func doChatResp(_ player: AudioPlayActor) async throws {
         let query = ChatQuery(
             messages: self.messages,
             model: self.config.llm.model
@@ -48,6 +45,7 @@ class Conversation {
         var content = ""
         var paragraph = ""
         
+        log.info("chat stream query: \(query)")
         for try await result in self.llmClient.chatsStream(query: query) {
             guard let current = result.choices[0].delta.content else {
                 continue
@@ -64,17 +62,18 @@ class Conversation {
             
             for i in 0...(count-2){
                 let audio = try await speechRequest(for: String(lines[i]))
-                await self.player.addAudio(data: audio)
+                await player.addAudio(data: audio)
             }
             paragraph = String(lines[count - 1])
         }
         
         if !paragraph.isEmpty {
             let audio = try await speechRequest(for: paragraph)
-            await self.player.addAudio(data: audio)
+            await player.addAudio(data: audio)
         }
-        await self.player.done()
+        await player.done()
         
+        log.info("chat stream resp content: \(content)")
         let assistantMsg = ChatQuery.ChatCompletionMessageParam(role: .assistant, content: content)
         self.messages.append(assistantMsg!)
     }
@@ -85,10 +84,10 @@ class Conversation {
         self.messages.append(systemMsg!)
         self.messages.append(userMsg!)
         
-        try await self.doChatResp()
+        try await self.doChatResp(AudioPlayActor())
     }
 
-    func chat(for data: Data) async throws {
+    func chat(for data: Data, _ player: AudioPlayActor) async throws {
         let aQuery = AudioTranscriptionQuery(
             file: data,
             fileType: .wav,
@@ -105,6 +104,6 @@ class Conversation {
         let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: asrResult.text)
         self.messages.append(userMsg!)
 
-        try await self.doChatResp()
+        try await self.doChatResp(player)
     }
 }
