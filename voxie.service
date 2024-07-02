@@ -1,0 +1,14 @@
+    [Unit]
+    Description=Start voxie
+    After=nss-lookup.target network.target sound.target network-online.target
+
+    [Service]
+    User=harry
+    ExecStart=/home/harry/voxie
+    Restart=always
+    RestartSec=10s
+    KillMode=process
+    TimeoutSec=infinity
+
+    [Install]
+    WantedBy=multi-user.target
