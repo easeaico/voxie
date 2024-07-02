@@ -15,11 +15,11 @@ class Conversation {
         self.config = config
 
         self.asrClient = OpenAI(configuration: 
-            OpenAI.Configuration(token: config.asr.apiKey, host: config.asr.host, port: config.asr.port, scheme: config.asr.scheme))
-        self.ttsClient = OpenAI(configuration: 
-            OpenAI.Configuration(token: config.tts.apiKey, host: config.tts.host, port: config.tts.port, scheme: config.tts.scheme))
+            OpenAI.Configuration(token: config.asr.apiKey, host: config.asr.host, port: config.asr.port, scheme: config.asr.scheme, timeoutInterval: 120))
+        self.ttsClient = OpenAI(configuration:
+            OpenAI.Configuration(token: config.tts.apiKey, host: config.tts.host, port: config.tts.port, scheme: config.tts.scheme, timeoutInterval: 120))
         self.llmClient = OpenAI(configuration: 
-            OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme))
+            OpenAI.Configuration(token: config.llm.apiKey, host: config.llm.host, port: config.llm.port, scheme: config.llm.scheme, timeoutInterval: 120))
 
         self.messages = []
     }
