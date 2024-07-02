@@ -97,6 +97,9 @@ class Conversation {
         log.info("audio transcription query: \(aQuery)")
         let asrResult = try await self.asrClient.audioTranscriptions(query: aQuery)
         log.info("audio transcription result: \(asrResult)")
+        if asrResult.text.isEmpty {
+            return
+        }
     
         let userMsg = ChatQuery.ChatCompletionMessageParam(role: .user, content: asrResult.text)
         self.messages.append(userMsg!)
