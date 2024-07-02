@@ -38,9 +38,7 @@ struct Config: Codable {
 }
 
 func loadConfig() -> Config {
-    let fileManager = FileManager.default
-    let currentDirectoryURL = URL(fileURLWithPath: fileManager.currentDirectoryPath)
-    let configFileURL = currentDirectoryURL.appendingPathComponent("Config.toml")
+    let configFileURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Config.toml")
     log.info("config file url: \(configFileURL)")
 
     do {
