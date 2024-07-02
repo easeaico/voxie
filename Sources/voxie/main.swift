@@ -9,7 +9,6 @@ let btn = gpio.setupPullUpButton(for: 17)
 let conf = loadConfig()
 let conversation = Conversation(config: conf) 
 
-
 do {
     try await conversation.bootstrap()
 } catch {
