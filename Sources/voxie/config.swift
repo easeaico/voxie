@@ -39,12 +39,12 @@ struct Config: Codable {
 
 func loadConfig() -> Config {
     let fileManager = FileManager.default
-    let currentDirectoryURL = fileManager.currentDirectoryPath
+    let currentDirectoryURL = URL(fileURLWithPath: fileManager.currentDirectoryPath)
     let configFileURL = currentDirectoryURL.appendingPathComponent("Config.toml")
     log.info("config file url: \(configFileURL)")
 
     do {
-        let fileContent = try String(contentsOfFile: configFileURL, encoding: .utf8)
+        let fileContent = try String(contentsOf: configFileURL, encoding: .utf8)
         let config = try TOMLDecoder().decode(Config.self, from: fileContent)
         return config
     } catch {
