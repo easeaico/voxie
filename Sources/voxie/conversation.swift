@@ -45,7 +45,7 @@ class Conversation {
         var content = ""
         var paragraph = ""
         
-        log.info("chat stream query: \(query)")
+        log.info("chat stream query: \(query.messages)")
         for try await result in self.llmClient.chatsStream(query: query) {
             guard let current = result.choices[0].delta.content else {
                 continue
@@ -94,7 +94,6 @@ class Conversation {
             model: self.config.asr.model,
             responseFormat: .json
         )
-        log.info("audio transcription query: \(aQuery)")
         let asrResult = try await self.asrClient.audioTranscriptions(query: aQuery)
         log.info("audio transcription result: \(asrResult)")
         if asrResult.text.isEmpty {

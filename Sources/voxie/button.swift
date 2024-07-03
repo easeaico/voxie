@@ -31,10 +31,17 @@ class PullUpButton {
     #endif
     }
 
-
-    func isPressed() -> Bool {
+    func isClick() -> Bool {
     #if os(Linux)
-        return LOW == digitalRead(self.btnPin)
+        if LOW == digitalRead(self.btnPin) {
+            delay(TimerInterval)
+            if HIGH == digitalRead(self.btnPin) {
+                return true
+            }
+        }
+        
+        delay(TimerInterval)
+        return false
     #else
         return false
     #endif

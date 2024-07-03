@@ -111,7 +111,7 @@ actor AudioPlayActor {
     func cancel() throws {
         if state == .inited || state == .playing || state == .done {
             self.state = .cancelled
-            // cancel playing
+            // stop current playing
             try player.stopAudioPlaying()
         }
     }

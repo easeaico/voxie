@@ -31,10 +31,9 @@ while(true) {
         let player = AudioPlayActor()
         try await conversation.chat(for: await capturer.getData(), player)
         while await player.isPlaying() {
-            if btn.isPressed() {
+            if btn.isClick() {
                 try await player.cancel()
             }
-            sleep(200)
         }
     } catch {
         log.error("chat conversation error: \(error)")
