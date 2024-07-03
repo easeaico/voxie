@@ -45,7 +45,7 @@ class Conversation {
         var content = ""
         var paragraph = ""
         
-        log.info("chat stream query: \(query.messages)")
+        self.logMessages(messages: query.messages)
         for try await result in self.llmClient.chatsStream(query: query) {
             guard let current = result.choices[0].delta.content else {
                 continue
@@ -71,7 +71,7 @@ class Conversation {
             let audio = try await speechRequest(for: paragraph)
             await player.addAudio(data: audio)
         }
-        await player.done()
+        await player.overData()
         
         log.info("chat stream resp content: \(content)")
         let assistantMsg = ChatQuery.ChatCompletionMessageParam(role: .assistant, content: content)
@@ -104,5 +104,12 @@ class Conversation {
         self.messages.append(userMsg!)
 
         try await self.doChatResp(player)
+    }
+    
+    private func logMessages(messages: [ChatQuery.ChatCompletionMessageParam]){
+        log.info("chat context: \n")
+        for msg in messages {
+            log.info("\(msg.role): \(msg.content!.string!)\n\n")
+        }
     }
 }

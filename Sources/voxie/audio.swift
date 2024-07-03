@@ -46,17 +46,18 @@ actor AudioPlayActor {
         case playing
         case played
         case cancelled
-        case done
     }
     
     private var datas: [Data]
     private let player: AudioPlayer
     private var state: PlayState
+    private var over: Bool
 
     init() {
         self.player = AudioPlayer()
         self.datas = [Data]()
         self.state = .inited
+        self.over = false
         
         Task {
             while true {
@@ -70,11 +71,7 @@ actor AudioPlayActor {
                     case .playing:
                         if await hasNext() {
                             try await playNext()
-                        }
-                    case .done:
-                        if await hasNext() {
-                            try await playNext()
-                        } else {
+                        } else if await isOver() {
                             await self.setState(.played)
                         }
                     case .cancelled, .played:
@@ -90,6 +87,10 @@ actor AudioPlayActor {
     
     private func setState(_ state: PlayState) {
         self.state = state
+    }
+    
+    private func isOver() -> Bool {
+        return self.over
     }
 
     private func hasNext() -> Bool {
@@ -109,17 +110,15 @@ actor AudioPlayActor {
     }
     
     func cancel() throws {
-        if state == .inited || state == .playing || state == .done {
+        if state == .inited || state == .playing {
             self.state = .cancelled
             // stop current playing
             try player.stopAudioPlaying()
         }
     }
     
-    func done() {
-        if state == .inited || state == .playing {
-            self.state = .done
-        }
+    func overData() {
+        self.over = true
     }
     
     func isPlaying() -> Bool {

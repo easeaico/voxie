@@ -8,6 +8,10 @@ class PullUpButton {
 
     init(for btnPin: Int32) {
         self.btnPin = btnPin
+#if os(Linux)
+        pinMode(self.btnPin, INPUT);
+        pullUpDnControl(self.btnPin, PUD_UP);
+#endif
     }
 
     func untilPress() {
@@ -57,10 +61,6 @@ class GPIO {
     }
 
     func setupPullUpButton(for pin: Int32) -> PullUpButton {
-    #if os(Linux)
-        pinMode(pin, INPUT);
-        pullUpDnControl(pin, PUD_UP);
-    #endif
         return PullUpButton(for: pin)
     }
 }
